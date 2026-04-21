@@ -16,6 +16,7 @@ Log.Logger = new LoggerConfiguration()
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
+builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient<IWeatherService, WeatherService>();
 builder.Host.UseSerilog();
 
