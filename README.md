@@ -2,6 +2,8 @@
 
 A modern ASP.NET Core 10 REST API that fetches real-time weather information from the Visual Crossing Weather API, with enterprise-grade features including caching, logging, and rate limiting.
 
+Idea: https://roadmap.sh/projects/weather-api-wrapper-service
+
 ## 📋 Table of Contents
 
 - [Features](#features)
@@ -35,15 +37,15 @@ A modern ASP.NET Core 10 REST API that fetches real-time weather information fro
 
 ## 🛠 Tech Stack
 
-| Component | Version | Purpose |
-|-----------|---------|---------|
-| **ASP.NET Core** | 10.0 | Web framework |
-| **C#** | Latest | Programming language |
-| **Serilog** | 10.0.0 | Structured logging |
-| **Serilog.Sinks.File** | 7.0.0 | File logging sink |
-| **HttpClient** | Built-in | HTTP requests |
-| **IMemoryCache** | Built-in | In-memory caching |
-| **Rate Limiter** | Built-in (10.0) | API rate limiting |
+| Component              | Version         | Purpose              |
+| ---------------------- | --------------- | -------------------- |
+| **ASP.NET Core**       | 10.0            | Web framework        |
+| **C#**                 | Latest          | Programming language |
+| **Serilog**            | 10.0.0          | Structured logging   |
+| **Serilog.Sinks.File** | 7.0.0           | File logging sink    |
+| **HttpClient**         | Built-in        | HTTP requests        |
+| **IMemoryCache**       | Built-in        | In-memory caching    |
+| **Rate Limiter**       | Built-in (10.0) | API rate limiting    |
 
 ### Optional (for Redis caching)
 
@@ -171,15 +173,16 @@ The API will start at `https://localhost:5011` (or `http://localhost:5000` in de
 ### Get Weather by City
 
 **Endpoint**
+
 ```
 GET /api/weather?city={city}
 ```
 
 **Query Parameters**
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `city` | string | Yes | City name (e.g., "Hanoi", "New York") |
+| Parameter | Type   | Required | Description                           |
+| --------- | ------ | -------- | ------------------------------------- |
+| `city`    | string | Yes      | City name (e.g., "Hanoi", "New York") |
 
 **Example Request**
 
@@ -204,11 +207,11 @@ curl "http://localhost:5011/api/weather?city=Hanoi"
 
 **Error Responses**
 
-| Status | Description |
-|--------|-------------|
-| 400 | Missing `city` query parameter |
-| 429 | Too Many Requests (rate limit exceeded) |
-| 500 | Internal server error |
+| Status | Description                             |
+| ------ | --------------------------------------- |
+| 400    | Missing `city` query parameter          |
+| 429    | Too Many Requests (rate limit exceeded) |
+| 500    | Internal server error                   |
 
 ---
 
@@ -217,6 +220,7 @@ curl "http://localhost:5011/api/weather?city=Hanoi"
 ### 📝 Logging
 
 **What's Logged:**
+
 - API requests and responses
 - Weather API calls and status codes
 - Deserialization success/failure
@@ -224,17 +228,20 @@ curl "http://localhost:5011/api/weather?city=Hanoi"
 - Cache hits/misses
 
 **Log Levels:**
+
 - `Information`: Normal operation flow
 - `Warning`: API returned non-success status code
 - `Error`: Exceptions (timeouts, network errors, JSON parsing)
 
 **Log Output:**
+
 - **Console**: Real-time logs in terminal
 - **Files**: Daily rolling logs in `Logs/log-YYYY-MM-DD.txt`
   - Keeps 7 most recent files
   - Format: `{Timestamp} [{Level}] {Message}`
 
 **Structured Logging Example:**
+
 ```csharp
 _logger.LogInformation("Fetching weather for city: {City}", city);
 _logger.LogWarning("Weather API return {StatusCode} for city {City}", response.StatusCode, city);
@@ -248,23 +255,27 @@ _logger.LogError(ex, "Timeout when retrieve weather for {City}", city);
 **Strategy**: In-memory caching (can switch to Redis)
 
 **Configuration in WeatherService:**
+
 - Cache key: `"{city}".ToLowerInvariant()`
 - **Absolute expiration**: 10 minutes from creation
 - **Sliding expiration**: 5 minutes of inactivity
 
 **How It Works:**
+
 1. First request for a city → Fetches from API, caches result
 2. Subsequent requests within 10 minutes → Returns cached data
 3. After 10 minutes → Cache expires, next request fetches fresh data
 4. Inactive for 5 minutes → Cache is evicted
 
 **To Switch to Redis:**
+
 ```bash
 dotnet add package StackExchange.Redis
 dotnet add package Microsoft.Extensions.Caching.StackExchangeRedis
 ```
 
 Update `Program.cs`:
+
 ```csharp
 builder.Services.AddStackExchangeRedisCache(options =>
 {
@@ -273,6 +284,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
 ```
 
 Update `WeatherService`:
+
 ```csharp
 public class WeatherService(..., IDistributedCache cache)
 {
@@ -285,14 +297,17 @@ public class WeatherService(..., IDistributedCache cache)
 ### 🚦 Rate Limiting
 
 **Configuration:**
+
 - **Type**: Fixed-window rate limiter
 - **Limit**: 5 requests per 10 seconds
 - **Response**: 429 Too Many Requests
 
 **Where It's Applied:**
+
 - Applied to `WeatherController` with `[EnableRateLimiting("fixedWindow")]`
 
 **Testing Rate Limit:**
+
 ```bash
 # First 5 requests succeed
 for i in {1..5}; do curl "http://localhost:5011/api/weather?city=Hanoi"; done
@@ -302,6 +317,7 @@ curl "http://localhost:5011/api/weather?city=Hanoi"
 ```
 
 **To Adjust Limits** (in `Program.cs`):
+
 ```csharp
 builder.Services.AddRateLimiter(option =>
 {
@@ -347,6 +363,7 @@ Output goes to `bin/Release/net10.0/publish/`
 ### Using VS Code REST Client Extension
 
 Create `test.http` file:
+
 ```http
 ### Get weather for Hanoi
 GET http://localhost:5011/api/weather?city=Hanoi
